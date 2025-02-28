@@ -252,6 +252,14 @@ def plot_resid(ax, data, dindx, model, color, norm_unc=False):
         data[dindx][gvals].value - model(fitx) + data[dindx + 2][gvals].value
     )
     if norm_unc:
+        # put in a limit on the uncertainties
+        # the optical uncs are *really* too small
+        uncs = data[dindx + 2][gvals].data
+        #print(data[dindx][gvals].data)
+        #print(uncs)
+        tvals = (uncs / data[dindx][gvals].value) > 0.1
+        print(len(tvals))
+
         yvals /= data[dindx + 2][gvals]
         yvals_fill1 /= data[dindx + 2][gvals]
         yvals_fill2 /= data[dindx + 2][gvals]
