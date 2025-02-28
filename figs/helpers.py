@@ -217,7 +217,7 @@ class G25(BaseExtModel, Fittable1DModel):
         description="bump: amplitude", default=3.23, bounds=(-1.0, 6.0)
     )
     bump_center = Parameter(
-        description="bump: centroid", default=4.59, bounds=(4.5, 4.9)
+        description="bump: centroid", default=4.59, bounds=(4.3, 5.1)
     )
     bump_fwhm = Parameter(description="bump: width", default=0.95, bounds=(0.6, 1.7))
 
@@ -246,7 +246,7 @@ class G25(BaseExtModel, Fittable1DModel):
         description="silicate 10um: center", default=9.84, bounds=(8.0, 12.0)
     )
     sil1_fwhm = Parameter(
-        description="silicate 10um: fwhm", default=2.21, bounds=(1.0, 3.0)
+        description="silicate 10um: fwhm", default=2.21, bounds=(1.0, 5.0)
     )
     sil1_asym = Parameter(
         description="silicate 10um: asymmetry",
@@ -408,5 +408,34 @@ class G25(BaseExtModel, Fittable1DModel):
         # return A(x)/A(V)
         return axav
 
-    # use numerical derivaties (need to add analytic)
+    def pprint_parameters(self):
+        """
+        Print the parameters with names and values
+        """
+        # line 1
+        pnames = [
+            ["bkg_amp", "bkg_center", "bkg_fwhm"],
+            ["fuv_amp", "fuv_center", "fuv_fwhm"],
+            ["bump_amp", "bump_center", "bump_fwhm"],
+            ["iss1_amp", "iss1_center", "iss1_fwhm"],
+            ["iss2_amp", "iss2_center", "iss2_fwhm"],
+            ["iss3_amp", "iss3_center", "iss3_fwhm"],
+            ["sil1_amp", "sil1_center", "sil1_fwhm", "sil1_asym"],
+            ["sil2_amp", "sil2_center", "sil2_fwhm", "sil2_asym"],
+            ["fir_amp", "fir_center", "fir_fwhm"],
+        ]
+        for cnames in pnames:
+            hline = ""
+            tline = ""
+            for cname in cnames:
+                if getattr(self, cname).fixed:
+                    fstr = "F"
+                else:
+                    fstr = ""
+                hline += f"{cname} "
+                tline += f"{getattr(self, cname).value:.3f}{fstr} "
+            print(f"{tline[:-1]} ({hline[:-1]})")
+
+
+    # use numerical derivatives (need to add analytic)
     fit_deriv = None
