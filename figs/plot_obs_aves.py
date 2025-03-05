@@ -16,7 +16,7 @@ if __name__ == "__main__":
         "--ave",
         help="average extinction curve to plot",
         default="GCC09_MWAvg",
-        choices=["GCC09_MWAvg", "G24_SMCAvg"],
+        choices=["G03_SMCBar", "GCC09_MWAvg", "G24_SMCAvg"],
     )
     parser.add_argument("--png", help="save figure as a png file", action="store_true")
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(
         nrows=nrows,
         ncols=1,
-        figsize=(12, 9),
+        figsize=(13, 8),
         sharex="col",
         gridspec_kw={
             "width_ratios": [1],
@@ -48,6 +48,7 @@ if __name__ == "__main__":
         constrained_layout=True,
     )
 
+    print(args.ave)
     start_wave = 0.04
     if args.ave == "G03_SMCBar":
         gmod = G03_SMCBar()
@@ -55,7 +56,7 @@ if __name__ == "__main__":
         xvals = (1.0 / xvals) * u.micron
         yvals = gmod.obsdata_axav
         yvals_unc = yvals * 0.01
-    if args.ave == "G24_SMCAvg":
+    elif args.ave == "G24_SMCAvg":
         gmod = G24_SMCAvg()
         xvals = gmod.obsdata_x
         xvals = (1.0 / xvals) * u.micron
@@ -95,7 +96,7 @@ if __name__ == "__main__":
     fmod.sil2_asym.fixed = False
 
     ax[0].plot(xvals, yvals, "b-", alpha=0.75)
-    ax[0].plot(xvals, fmod(xvals), "k:", alpha=0.5)
+    #ax[0].plot(xvals, fmod(xvals), "k:", alpha=0.5)
 
     # fit
     fit = LevMarLSQFitter()
@@ -106,7 +107,7 @@ if __name__ == "__main__":
 
     cmodelfit.pprint_parameters()
 
-    amps = ["bkg", "fuv", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
+    amps = ["bkg", "FUV", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
     comps = copy.deepcopy(cmodelfit)
     for camp in amps:
         setattr(comps, f"{camp}_amp", 0.0)
@@ -115,14 +116,17 @@ if __name__ == "__main__":
         ax[0].plot(xvals, comps(xvals), "k--", alpha=0.5)
         setattr(comps, f"{camp}_amp", 0.0)
 
-    ax[1].plot(xvals, 100.0 * (cmodelfit(xvals) - yvals), "k-", alpha=0.5)
+    ax[1].plot(xvals, (cmodelfit(xvals) - yvals), "k-", alpha=0.5)
     ax[1].axhline(linestyle="--", alpha=0.25, color="k", linewidth=2)
 
+    ax[0].set_ylabel(r"$A(\lambda)/A(V)$")
     ax[0].set_yscale("log")
-    ax[0].set_ylim(0.0001, 20.0)
+    ax[0].set_ylim(0.1, 20.0)
 
+    ax[1].set_xlabel(r"$\lambda [\mu m]$")
+    ax[1].set_ylabel("obs - fit")
     ax[1].set_xscale("log")
-    ax[1].set_ylim(-25, 25)
+    ax[1].set_ylim(-0.2, 0.2)
 
     fname = f"obs_avs_{args.ave}"
     if args.png:

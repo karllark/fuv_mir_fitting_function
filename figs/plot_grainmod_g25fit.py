@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     cmodelfit.pprint_parameters()
 
-    amps = ["bkg", "fuv", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
+    amps = ["bkg", "FUV", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
     comps = copy.deepcopy(cmodelfit)
     for camp in amps:
         setattr(comps, f"{camp}_amp", 0.0)

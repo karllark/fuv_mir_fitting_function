@@ -189,29 +189,34 @@ class G25(BaseExtModel, Fittable1DModel):
     n_inputs = 1
     n_outputs = 1
 
-    bkg_amp = Parameter(
-        description="bkg: amplitude", default=2.5, bounds=(0.0, 10.0)
-    )
+    bkg_amp = Parameter(description="bkg: amplitude", default=2.5, bounds=(0.0, 10.0))
     bkg_center = Parameter(
         description="bkg: center", default=0.047, bounds=(0.03, 0.07), fixed=True
     )
-    bkg_fwhm = Parameter(description="bkg: fwhm", default=0.433, fixed=False)
-
-    fuv_amp = Parameter(
-       description="fuv: amplitude", default=3.5, bounds=(0.0, 10.0), fixed=False
+    bkg_fwhm = Parameter(
+        description="bkg: fwhm", default=0.433, bounds=(0.0, None), fixed=False
     )
-    fuv_center = Parameter(description="fuv: center", default=0.075, fixed=False)
-    fuv_fwhm = Parameter(description="fuv: fwhm", default=0.015, fixed=False)
 
-    #FUV_amp = Parameter(description="FUV term: amplitude", default=14.0 * AbAv, min=0.0)
-    #FUV_lambda = Parameter(
-    #    description="FUV term: center wavelength",
-    #    default=0.075,
-    #    bounds=(0.06, 0.10),
-    #    fixed=True,
-    #)
-    #FUV_b = Parameter(description="FUV term: b coefficient", default=4.0)
-    #FUV_n = Parameter(description="FUV term: n coefficient", default=6.5)
+    # fuv_amp = Parameter(
+    #     description="fuv: amplitude", default=3.5, bounds=(0.0, 100.0), fixed=False
+    # )
+    # fuv_center = Parameter(
+    #     description="fuv: center", default=0.075, bounds=(0.06, 0.10), fixed=False
+    # )
+    # fuv_fwhm = Parameter(
+    #     description="fuv: fwhm", default=0.1, bounds=(0.0, None), fixed=False
+    # )
+
+    AbAv = 10.0
+    FUV_amp = Parameter(description="FUV term: amplitude", default=14.0 * AbAv, min=0.0)
+    FUV_lambda = Parameter(
+       description="FUV term: center wavelength",
+       default=0.072,
+       bounds=(0.06, 0.10),
+       fixed=True,
+    )
+    FUV_b = Parameter(description="FUV term: b coefficient", default=4.0)
+    FUV_n = Parameter(description="FUV term: n coefficient", default=6.5)
 
     bump_amp = Parameter(
         description="bump: amplitude", default=3.23, bounds=(-1.0, 6.0)
@@ -283,7 +288,7 @@ class G25(BaseExtModel, Fittable1DModel):
     )
     fir_center = Parameter(
         description="fir: center",
-        default=15.,
+        default=15.0,
         bounds=(4.0, 100.0),
         fixed=False,
     )
@@ -337,13 +342,13 @@ class G25(BaseExtModel, Fittable1DModel):
         # BKG_amp,
         # BKG_lambda,
         # BKG_b,
-        fuv_amp,
-        fuv_center,
-        fuv_fwhm,
-        #FUV_amp,
-        #FUV_lambda,
-        #FUV_b,
-        #FUV_n,
+        # fuv_amp,
+        # fuv_center,
+        # fuv_fwhm,
+        FUV_amp,
+        FUV_lambda,
+        FUV_b,
+        FUV_n,
         bump_amp,
         bump_center,
         bump_fwhm,
@@ -394,8 +399,8 @@ class G25(BaseExtModel, Fittable1DModel):
         axav = (
             +_modified_drude(lam, bkg_amp, bkg_center, bkg_fwhm, 0.0)
             # + self._p92_single_term(lam, BKG_amp, BKG_lambda, BKG_b, 2.0)
-            # + self._p92_single_term(lam, FUV_amp, FUV_lambda, FUV_b, FUV_n)
-            + _modified_drude(lam, fuv_amp, fuv_center, fuv_fwhm, 0.0)
+            + self._p92_single_term(lam, FUV_amp, FUV_lambda, FUV_b, FUV_n)
+            # + _modified_drude(lam, fuv_amp, fuv_center, fuv_fwhm, 0.0)
             + _modified_drude(x, bump_amp, bump_center, bump_fwhm, 0.0)
             + _modified_drude(x, iss1_amp, iss1_center, iss1_fwhm, 0.0)
             + _modified_drude(x, iss2_amp, iss2_center, iss2_fwhm, 0.0)
@@ -415,7 +420,8 @@ class G25(BaseExtModel, Fittable1DModel):
         # line 1
         pnames = [
             ["bkg_amp", "bkg_center", "bkg_fwhm"],
-            ["fuv_amp", "fuv_center", "fuv_fwhm"],
+            #["fuv_amp", "fuv_center", "fuv_fwhm"],
+            ["FUV_amp", "FUV_lambda", "FUV_b", "FUV_n"],
             ["bump_amp", "bump_center", "bump_fwhm"],
             ["iss1_amp", "iss1_center", "iss1_fwhm"],
             ["iss2_amp", "iss2_center", "iss2_fwhm"],
@@ -435,7 +441,6 @@ class G25(BaseExtModel, Fittable1DModel):
                 hline += f"{cname} "
                 tline += f"{getattr(self, cname).value:.3f}{fstr} "
             print(f"{tline[:-1]} ({hline[:-1]})")
-
 
     # use numerical derivatives (need to add analytic)
     fit_deriv = None
