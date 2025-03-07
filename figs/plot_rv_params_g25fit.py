@@ -12,8 +12,8 @@ import astropy.units as u
 from astropy.stats import sigma_clip
 from astropy.modeling.fitting import LevMarLSQFitter, FittingWithOutlierRemoval
 
-
 from helpers import G25
+# from helpers import G25_FUV as G25
 
 
 def plot_irv_ssamp(
@@ -548,7 +548,7 @@ if __name__ == "__main__":
     modx = np.logspace(np.log10(0.001), np.log10(1000.0), 1000) * u.micron
     ax[0].plot(modx, comps(modx), "k-", alpha=0.75)
 
-    amps = ["bkg", "FUV", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
+    amps = ["bkg", "fuv", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
     for camp in amps:
         setattr(comps, f"{camp}_amp", 0.0)
     for camp in amps:
