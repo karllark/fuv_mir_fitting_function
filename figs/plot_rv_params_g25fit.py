@@ -674,9 +674,9 @@ if __name__ == "__main__":
 
     ax[tax].tick_params(axis="x", which="minor", labelsize=fontsize * 0.8)
 
-    ax[0].yaxis.set_major_formatter(ScalarFormatter())
-    ax[0].yaxis.set_minor_formatter(ScalarFormatter())
-    ax[0].set_yticks([0.1, 1.0, 10.0], minor=True)
+    #ax[0].yaxis.set_major_formatter(ScalarFormatter())
+    #ax[0].yaxis.set_minor_formatter(ScalarFormatter())
+    #ax[0].set_yticks([0.1, 1.0, 10.0], minor=True)
     if show_rv:
         ax[2].yaxis.set_major_formatter(ScalarFormatter())
         ax[2].yaxis.set_minor_formatter(ScalarFormatter())

@@ -273,18 +273,18 @@ class G25(BaseExtModel, Fittable1DModel):
     )
 
     fir_amp = Parameter(
-        description="fir: amplitude", default=0.005, bounds=(0.0, 0.01), fixed=False
+        description="fir: amplitude", default=0.014, bounds=(0.0, 1.0), fixed=False
     )
     fir_center = Parameter(
         description="fir: center",
-        default=15.0,
-        bounds=(4.0, 100.0),
+        default=11.031,
+        bounds=(2.0, 100.0),
         fixed=False,
     )
     fir_fwhm = Parameter(
         description="fir: fwhm",
-        default=10.0,
-        bounds=(1.0, 100.0),
+        default=40.687,
+        bounds=(1.0, 1000.0),
         fixed=False,
     )
 
