@@ -1,0 +1,5 @@
+search_dir=/the/path/to/base/dir
+for entry in data/fit19*ext.fits
+do
+  echo "$entry"
+done
