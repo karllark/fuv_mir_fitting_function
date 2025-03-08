@@ -63,8 +63,8 @@ if __name__ == "__main__":
     x = 1.0 / wave.value
 
     # modify weights to make sure the 2175 A bump is fit
-    # weights = 1.0 / y_unc
-    weights = np.full(len(x), 1.0 / (0.01 * y))
+    weights = 1.0 / y_unc
+    # weights = np.full(len(x), 1.0 / (0.01 * y))
     # weights[(x > 4.0) & (x < 5.1)] *= 2.0
     # weights[(x > 1/0.13) & (x < 0.15)] *= 2.0
     # weights[x > 1./0.12] *= 0.0
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     modgvals_fm90 = modx < 0.3 * u.micron
     # ax.plot(x, fm90_fit3(x), label="emcee")
     if args.mcmc:
-        ptype = "Best"
+        ptype = "P50"
         plotmod = fitmod_mcmc
         plotmod_fm90 = fitmod_mcmc_fm90
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             fitter_to_model_params(model_copy, sample)
             ax.plot(x, model_copy(x), "C1", alpha=0.05)
     else:
-        ptype = "P50"
+        ptype = "Best"
         plotmod = fitmod
         plotmod_fm90 = fitmod_fm90
 

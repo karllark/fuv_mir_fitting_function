@@ -216,19 +216,19 @@ class G25(BaseExtModel, Fittable1DModel):
     bump_fwhm = Parameter(description="bump: width", default=0.95, bounds=(0.6, 1.7))
 
     iss1_amp = Parameter(
-        description="ISS1: amplitude", default=0.03893, bounds=(0.001, 1.0), fixed=False
+        description="ISS1: amplitude", default=0.03893, bounds=(0.00, 0.2), fixed=False
     )
     iss1_center = Parameter(description="ISS1: center", default=2.288, fixed=True)
     iss1_fwhm = Parameter(description="ISS2: fwhm", default=0.243, fixed=True)
 
     iss2_amp = Parameter(
-        description="ISS2: amplitude", default=0.02965, bounds=(0.001, 0.1), fixed=False
+        description="ISS2: amplitude", default=0.02965, bounds=(0.00, 1.0), fixed=False
     )
     iss2_center = Parameter(description="ISS2: center", default=2.054, fixed=True)
     iss2_fwhm = Parameter(description="ISS2: fwhm", default=0.179, fixed=True)
 
     iss3_amp = Parameter(
-        description="ISS3: amplitude", default=0.01747, bounds=(0.001, 0.1), fixed=False
+        description="ISS3: amplitude", default=0.01747, bounds=(0.00, 1.0), fixed=False
     )
     iss3_center = Parameter(description="ISS3: center", default=1.587, fixed=True)
     iss3_fwhm = Parameter(description="ISS3: fwhm", default=0.243, fixed=True)
