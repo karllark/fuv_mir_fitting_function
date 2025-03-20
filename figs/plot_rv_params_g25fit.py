@@ -325,11 +325,20 @@ def plot_wavereg(ax, models, datasets, colors, wrange, no_weights=False, show_rv
     or_fit = FittingWithOutlierRemoval(fit, sigma_clip, niter=3, sigma=5.0)
     rejsym = "kx"
 
+    # save the intercepts = MW Rv=3.1
+    otab = QTable()
+    otab["wave"] = all_waves[gvals]
+    otab["A(l)/A(V)"] = all_intercepts[gvals]
+    otab["unc"] = all_intercepts_unc[gvals]
+    otab.write("G23_Rv31_ext.dat", format="ascii.commented_header", overwrite=True)
+
     # intercept
     # cmodelfit = fit(
     #     cmodelinit, 1.0 / all_waves[gvals].value, all_intercepts[gvals], maxiter=500
     # )
     fitx = 1.0 / all_waves[gvals].value
+
+
     cmodelfit, mask = or_fit(
         models[0], fitx, all_intercepts[gvals], weights=1.0 / all_intercepts_unc[gvals]
     )

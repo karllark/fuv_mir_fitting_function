@@ -1,0 +1,5 @@
+
+for entry in data/gor09*ext.fits
+do
+  python utils/fit_ext.py --png $entry
+done

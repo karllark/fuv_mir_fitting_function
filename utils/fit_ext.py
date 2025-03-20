@@ -39,35 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--pdf", help="save figure as a pdf file", action="store_true")
     args = parser.parse_args()
 
-    # get a saved extinction curve
     file = args.extfile
-    ofile = file.replace(".fits", "_fit.fits").replace("data/", "fits/")
-
-    ext = ExtData(filename=file)
-    if "IUE" in ext.exts.keys():
-        spectype = "IUE"
-    else:
-        spectype = "STIS"
-
-    # get the extinction curve in alav - (using (A(V) in header)
-    if ext.type == "elx":
-        ext.trans_elv_alav()
-
-    wave, y, y_unc = ext.get_fitdata(
-        # [spectype],
-        [spectype, "BAND"],
-        remove_uvwind_region=True,
-        remove_below_lya=True,
-        remove_lya_region=True,
-    )
-    x = 1.0 / wave.value
-
-    # modify weights to make sure the 2175 A bump is fit
-    weights = 1.0 / y_unc
-    # weights = np.full(len(x), 1.0 / (0.01 * y))
-    # weights[(x > 4.0) & (x < 5.1)] *= 2.0
-    # weights[(x > 1/0.13) & (x < 0.15)] *= 2.0
-    # weights[x > 1./0.12] *= 0.0
 
     # initialize the model
     mod_init = G25()
@@ -75,9 +47,14 @@ if __name__ == "__main__":
     # mod_init.bkg_center.fixed = True
     # mod_init.bkg_fwhm.fixed = True
 
-    #mod_init.iss1_amp.fixed = True
-    #mod_init.iss2_amp.fixed = True
-    #mod_init.iss3_amp.fixed = True
+    remove_below_lya = True
+    if "gor09" in file:
+        remove_below_lya = False
+
+    if "fit19" not in file:
+        mod_init.iss1_amp.fixed = True
+        mod_init.iss2_amp.fixed = True
+        mod_init.iss3_amp.fixed = True
 
     if "gor21" not in file:
         mod_init.sil1_amp.fixed = True
@@ -92,20 +69,74 @@ if __name__ == "__main__":
         # mod_init.fir_amp.value = 0.15
         mod_init.fir_center.fixed = True
         mod_init.fir_fwhm.fixed = True
+    else:
+        mod_init.sil2_amp.fixed = False
+        mod_init.sil2_center.fixed = True
+        mod_init.sil2_fwhm.fixed = True
+
+        mod_init.fir_center.fixed = True
+        mod_init.fir_fwhm.fixed = True
+
+    if "dec22" in file:
+        mod_init.fir_amp.fixed = True
+        mod_init.fir_center.fixed = True
+        mod_init.fir_fwhm.fixed = True
+
+    # get a saved extinction curve
+    ofile = file.replace(".fits", "_fit.fits").replace("data/", "fits/")
+
+    ext = ExtData(filename=file)
+    if "IUE" in ext.exts.keys():
+        spectype = "IUE"
+    else:
+        spectype = "STIS"
+
+    # get the extinction curve in alav - (using (A(V) in header)
+    if ext.type == "elx":
+        ext.trans_elv_alav()
+
+    wave, y, y_unc = ext.get_fitdata(
+        remove_uvwind_region=True,
+        remove_below_lya=remove_below_lya,
+        remove_lya_region=True,
+    )
+
+    if "dec22" in file:
+        gvals = wave < 4.0 * u.micron
+        wave = wave[gvals]
+        y = y[gvals]
+        y_unc = y_unc[gvals]
+
+    x = 1.0 / wave.value
+
+    # modify weights to make sure the 2175 A bump is fit
+    weights = 1.0 / y_unc
+    # weights = np.full(len(x), 1.0 / (0.1 * y))
+    # weights[(x > 4.0) & (x < 5.1)] *= 10.0
+    # weights[(x > 1/0.13) & (x < 0.15)] *= 10.0
+    # weights[x > 1./0.12] *= 0.0
 
     # FM90 only applies to the UV
     mod_init_fm90 = FM90_B3()
     gvals_fm90 = x > 1 / 0.3
+
+    if np.sum(gvals_fm90) > 0:
+        fit_fm90 = True
+    else:
+        fit_fm90 = False
 
     # fit the data to the model using the fitter
     fit = LevMarLSQFitter()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
         fitmod = fit(mod_init, x, y, weights=weights)
+        plotmod = fitmod
 
-        fitmod_fm90 = fit(
-            mod_init_fm90, x[gvals_fm90], y[gvals_fm90], weights=weights[gvals_fm90]
-        )
+        if fit_fm90:
+            fitmod_fm90 = fit(
+                mod_init_fm90, x[gvals_fm90], y[gvals_fm90], weights=weights[gvals_fm90]
+            )
+            plotmod_fm90 = fitmod_fm90
 
     # sample with optimizer
     if args.mcmc:
@@ -115,22 +146,26 @@ if __name__ == "__main__":
             save_samples=ofile.replace(".fits", ".h5"),
         )
         fitmod_mcmc = fitmcmc(fitmod, x, y, weights=weights)
+        plotmod = fitmod_mcmc
 
-        fitmcmc_fm90 = EmceeFitter(
-            nsteps=args.nsteps,
-            burnfrac=args.burnfrac,
-            save_samples=ofile.replace(".fits", "_fm90.h5"),
-        )
-        fitmod_mcmc_fm90 = fitmcmc_fm90(fitmod, x, y, weights=weights)
+        if fit_fm90:
+            fitmcmc_fm90 = EmceeFitter(
+                nsteps=args.nsteps,
+                burnfrac=args.burnfrac,
+                save_samples=ofile.replace(".fits", "_fm90.h5"),
+            )
+            fitmod_mcmc_fm90 = fitmcmc_fm90(fitmod, x, y, weights=weights)
+            plotmod_fm90 = fitmod_mcmc_fm90
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             fitmcmc.plot_emcee_results(
                 fitmod_mcmc, filebase=ofile.replace(".fits", "_mcmc")
             )
-            fitmcmc_fm90.plot_emcee_results(
-                fitmod_mcmc_fm90, filebase=ofile.replace(".fits", "fm90_mcmc")
-            )
+            if fit_fm90:
+                fitmcmc_fm90.plot_emcee_results(
+                    fitmod_mcmc_fm90, filebase=ofile.replace(".fits", "fm90_mcmc")
+                )
 
         # diagnostics
         print(
@@ -144,20 +179,22 @@ if __name__ == "__main__":
             parameters_punc=fitmod_mcmc.uncs_plus,
             parameters_munc=fitmod_mcmc.uncs_minus,
         )
-        fm90_param = ext.create_param_table(
-            fitmod_mcmc_fm90.param_names,
-            fitmod_mcmc_fm90.parameters,
-            parameters_punc=fitmod_mcmc_fm90.uncs_plus,
-            parameters_munc=fitmod_mcmc_fm90.uncs_minus,
-        )
+        if fit_fm90:
+            fm90_param = ext.create_param_table(
+                fitmod_mcmc_fm90.param_names,
+                fitmod_mcmc_fm90.parameters,
+                parameters_punc=fitmod_mcmc_fm90.uncs_plus,
+                parameters_munc=fitmod_mcmc_fm90.uncs_minus,
+            )
 
         print("G25 parameters (p50)")
         fitmod_mcmc.pprint_parameters()
     else:
         g25_param = ext.create_param_table(fitmod.param_names, fitmod.parameters)
-        fm90_param = ext.create_param_table(
-            fitmod_fm90.param_names, fitmod_fm90.parameters
-        )
+        if fit_fm90:
+            fm90_param = ext.create_param_table(
+                fitmod_fm90.param_names, fitmod_fm90.parameters
+            )
 
         print("G25 parameters (best)")
         fitmod.pprint_parameters()
@@ -165,7 +202,21 @@ if __name__ == "__main__":
     # save extinction and fit parameters
     fit_params = {}
     fit_params["G25"] = g25_param
-    fit_params["FM90"] = fm90_param
+    if fit_fm90:
+        fit_params["FM90"] = fm90_param
+    if fit_fm90:
+        chisqr_fm90 = np.sum(
+            np.square((y[gvals_fm90] - plotmod_fm90(x[gvals_fm90])) / y_unc[gvals_fm90])
+        ) / np.sqrt(np.sum(gvals_fm90) - 1)
+        chisqr_fm90_g25 = np.sum(
+            np.square((y[gvals_fm90] - plotmod(x[gvals_fm90])) / y_unc[gvals_fm90])
+        ) / np.sqrt(np.sum(gvals_fm90) - 1)
+        ctab = QTable()
+        ctab["name"] = ["G25", "other"]
+        ctab["FM90"] = [chisqr_fm90_g25, chisqr_fm90]
+        fit_params["CHISQR"] = ctab
+        print("FM90 chisqr (G25, FM90)", chisqr_fm90_g25, chisqr_fm90)
+
     ext.save(ofile, fit_params=fit_params)
 
     fontsize = 16
@@ -180,7 +231,7 @@ if __name__ == "__main__":
 
     # plot the observed data, initial guess, and final fit
     fig, fax = plt.subplots(
-        nrows=2, figsize=(12, 8), sharex=True, gridspec_kw={"height_ratios": [5, 1]}
+        nrows=2, figsize=(12, 8), sharex=True, gridspec_kw={"height_ratios": [4, 1]}
     )
 
     # remove pesky x without units warnings
@@ -197,8 +248,6 @@ if __name__ == "__main__":
     # ax.plot(x, fm90_fit3(x), label="emcee")
     if args.mcmc:
         ptype = "P50"
-        plotmod = fitmod_mcmc
-        plotmod_fm90 = fitmod_mcmc_fm90
 
         # plot samples from the mcmc chain
         flat_samples = fitmcmc.fit_info["sampler"].get_chain(
@@ -212,17 +261,16 @@ if __name__ == "__main__":
             ax.plot(x, model_copy(x), "C1", alpha=0.05)
     else:
         ptype = "Best"
-        plotmod = fitmod
-        plotmod_fm90 = fitmod_fm90
 
     ax.plot(modx, plotmod(modx), "g-", alpha=0.75, label=f"{ptype}")
-    ax.plot(
-        modx[modgvals_fm90],
-        plotmod_fm90(modx[modgvals_fm90]),
-        "b:",
-        alpha=0.5,
-        label=f"{ptype} (FM90)",
-    )
+    if fit_fm90:
+        ax.plot(
+            modx[modgvals_fm90],
+            plotmod_fm90(modx[modgvals_fm90]),
+            "b:",
+            alpha=0.5,
+            label=f"{ptype} (FM90)",
+        )
 
     # plot the components
     amps = ["bkg", "fuv", "bump", "iss1", "iss2", "iss3", "sil1", "sil2", "fir"]
@@ -238,7 +286,7 @@ if __name__ == "__main__":
 
     krange = [np.nanmin(x.value), np.nanmax(x.value)]
     ax.set_xlim(krange)
-    krange = [np.nanmin(y), np.nanmax(y)]
+    krange = [np.max((np.nanmin(y), 1e-3)), np.nanmax(y)]
     ax.set_ylim(krange)
 
     ax.set_xscale("log")
@@ -252,10 +300,17 @@ if __name__ == "__main__":
     # residuals
     ax = fax[1]
     ax.plot(x, np.zeros((len(x))), "k--")
-    ax.plot(x[gvals_fm90], y[gvals_fm90] - plotmod_fm90(x[gvals_fm90]), "b:", alpha=0.5)
-    ax.plot(x, y - plotmod(x), "g-", alpha=0.75)
-    ax.set_ylim(np.array([-1.0, 1.0]) * 0.1)
+    if fit_fm90:
+        ax.plot(
+            x[gvals_fm90],
+            (y[gvals_fm90] - plotmod_fm90(x[gvals_fm90])) / y_unc[gvals_fm90],
+            "b:",
+            alpha=0.5,
+        )
+    ax.plot(x, (y - plotmod(x)) / y_unc, "g-", alpha=0.75)
+    ax.set_ylim(np.array([-1.0, 1.0]) * 3.0)
     ax.set_xlabel(r"$\lambda$ [$\mu m$]")
+    ax.set_ylabel("(y - mod)/unc")
 
     plt.tight_layout()
 
