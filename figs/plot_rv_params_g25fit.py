@@ -546,7 +546,7 @@ if __name__ == "__main__":
         datasets,
         colors,
         wrange=[0.0912, 40.0] * u.micron,
-        no_weights=True,
+        no_weights=False,
         show_rv=show_rv,
     )
 
